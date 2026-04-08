@@ -2,17 +2,24 @@ import React from 'react';
 import { Sparkles, Shield, User, ChevronRight } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
-const WORKFLOW_STEPS = ["Ingest", "Extract", "Generate", "Preview", "Export"];
+const WORKFLOW_STEPS = [
+  { label: "Ingest", path: "/ingest" },
+  { label: "Extract", path: "/extract" },
+  { label: "Generate", path: "/" },
+  { label: "Preview", path: "/preview" },
+  { label: "Export", path: "/export" }
+];
 
 export default function TopNav() {
   const location = useLocation();
   
   let activeStep = -1;
-  if (location.pathname === '/ingest') activeStep = 0;
-  else if (location.pathname === '/extract') activeStep = 1;
-  else if (location.pathname === '/') activeStep = 2; // Dashboard/Generate
-  else if (location.pathname === '/preview') activeStep = 3;
-  else if (location.pathname === '/export') activeStep = 4;
+  const currentPath = location.pathname;
+  if (currentPath === '/ingest') activeStep = 0;
+  else if (currentPath === '/extract') activeStep = 1;
+  else if (currentPath === '/') activeStep = 2; // Dashboard/Generate
+  else if (currentPath === '/preview') activeStep = 3;
+  else if (currentPath === '/export') activeStep = 4;
 
   return (
     <nav className="fixed top-0 left-0 right-0 h-16 bg-[#0F1117]/80 backdrop-blur-md border-b border-white/5 z-50 flex items-center justify-between px-6">
@@ -32,20 +39,21 @@ export default function TopNav() {
           const isActive = index === activeStep;
           const isPassed = index < activeStep;
           return (
-            <React.Fragment key={step}>
-              <div
-                className={`flex items-center gap-2 text-sm font-medium transition-colors ${
+            <React.Fragment key={step.label}>
+              <Link
+                to={step.path}
+                className={`flex items-center gap-2 text-sm font-medium transition-colors hover:text-[#00F0FF] ${
                   isActive ? 'text-[#00F0FF]' : isPassed ? 'text-white/70' : 'text-white/30'
                 }`}
               >
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs transition-colors ${
                   isActive ? 'bg-[#00F0FF]/10 text-[#00F0FF] border border-[#00F0FF]/30 shadow-[0_0_10px_rgba(0,240,255,0.2)]' 
                   : isPassed ? 'bg-white/10 text-white' : 'bg-transparent border border-white/10'
                 }`}>
                   {index + 1}
                 </div>
-                {step}
-              </div>
+                {step.label}
+              </Link>
               {index < WORKFLOW_STEPS.length - 1 && (
                 <ChevronRight className={`w-4 h-4 ${isPassed ? 'text-white/40' : 'text-white/10'}`} />
               )}
