@@ -1,22 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import FeatureInputCard from '../components/dashboard/FeatureInputCard';
 import ScreenshotUploader from '../components/dashboard/ScreenshotUploader';
 import GenerateButton from '../components/dashboard/GenerateButton';
 import PersonaTabs from '../components/dashboard/PersonaTabs';
 import FaqAccordion from '../components/dashboard/FaqAccordion';
-import { MOCK_FAQS } from '../data/mockFaqs';
+import faqsApi from '../api/faqsApi';
 
 export default function Dashboard() {
   const [activePersona, setActivePersona] = useState('nora'); // nora, sam, paul
   const [language, setLanguage] = useState('en');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [faqs, setFaqs] = useState({ nora: [], sam: [], paul: [] });
+  const [loading, setLoading] = useState(true);
+
+  // Fetch FAQs from API
+  useEffect(() => {
+    const fetchFaqs = async () => {
+      try {
+        setLoading(true);
+        const [noraData, samData, paulData] = await Promise.all([
+          faqsApi.getAll({ persona: 'nora' }),
+          faqsApi.getAll({ persona: 'sam' }),
+          faqsApi.getAll({ persona: 'paul' }),
+        ]);
+        setFaqs({
+          nora: noraData.success ? noraData.data : [],
+          sam: samData.success ? samData.data : [],
+          paul: paulData.success ? paulData.data : [],
+        });
+      } catch (err) {
+        console.error('Failed to load FAQs:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchFaqs();
+  }, []);
 
   const handleGenerate = () => {
     setIsGenerating(true);
     setTimeout(() => setIsGenerating(false), 2000);
   };
 
-  const currentFaqs = MOCK_FAQS[activePersona];
+  const currentFaqs = faqs[activePersona] || [];
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 max-w-[1600px] mx-auto h-full">
@@ -57,13 +83,18 @@ export default function Dashboard() {
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 pb-6">
-          {isGenerating ? (
+          {isGenerating || loading ? (
             <div className="flex flex-col items-center justify-center h-full text-white/40 space-y-4">
                <div className="w-8 h-8 border-2 border-[#00F0FF]/30 border-t-[#00F0FF] rounded-full animate-spin"></div>
-               <p className="text-sm">Synthesizing Intent & Extracting UI Context...</p>
+               <p className="text-sm">{loading ? 'Loading FAQs...' : 'Synthesizing Intent & Extracting UI Context...'}</p>
             </div>
-          ) : (
+          ) : currentFaqs.length > 0 ? (
             <FaqAccordion faqs={currentFaqs} activePersona={activePersona} />
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-white/30 space-y-2">
+              <p className="text-sm">No FAQs generated yet.</p>
+              <p className="text-xs">Seed the database or generate new FAQs to see them here.</p>
+            </div>
           )}
         </div>
       </div>

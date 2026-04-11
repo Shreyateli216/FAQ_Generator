@@ -1,13 +1,31 @@
-import React, { useState } from 'react';
-import { Monitor, Smartphone, Tablet, ChevronLeft, ChevronRight, Settings, Maximize, ExternalLink } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Monitor, Smartphone, Tablet, ChevronLeft, ChevronRight, Settings, Maximize } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import FaqAccordion from '../components/dashboard/FaqAccordion';
-import { MOCK_FAQS } from '../data/mockFaqs';
+import faqsApi from '../api/faqsApi';
 
 export default function Preview() {
   const navigate = useNavigate();
-  const [device, setDevice] = useState('desktop'); // desktop, tablet, mobile
+  const [device, setDevice] = useState('desktop');
   const [theme, setTheme] = useState('dark');
+  const [faqs, setFaqs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFaqs = async () => {
+      try {
+        const data = await faqsApi.getAll({ persona: 'sam' });
+        if (data.success) {
+          setFaqs(data.data);
+        }
+      } catch (err) {
+        console.error('Failed to load FAQs:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchFaqs();
+  }, []);
 
   const getContainerWidth = () => {
     switch (device) {
@@ -57,14 +75,21 @@ export default function Preview() {
         {/* Left side preview */}
         <div className="flex-1 bg-black/40 rounded-2xl border border-white/10 flex items-center justify-center p-8 overflow-y-auto">
           <div className={`${getContainerWidth()} h-full transition-all duration-500 ease-in-out`}>
-            {/* The widget itself */}
             <div className={`rounded-xl shadow-2xl overflow-hidden h-full flex flex-col ${theme === 'dark' ? 'bg-[#121212] text-white border border-white/10' : 'bg-white text-gray-900 border border-black/10'}`}>
               <div className="p-4 border-b border-inherit bg-inherit flex items-center justify-between shadow-sm z-10">
                 <span className="font-semibold">Frequently Asked Questions</span>
                 <Maximize className="w-4 h-4 opacity-50" />
               </div>
               <div className="flex-1 p-4 overflow-y-auto widget-scroll">
-                <FaqAccordion faqs={MOCK_FAQS.sam} theme={theme} activePersona="sam" />
+                {loading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="w-6 h-6 border-2 border-[#00F0FF]/30 border-t-[#00F0FF] rounded-full animate-spin" />
+                  </div>
+                ) : faqs.length > 0 ? (
+                  <FaqAccordion faqs={faqs} theme={theme} activePersona="sam" />
+                ) : (
+                  <p className="text-center text-sm opacity-50 py-8">No FAQs to preview. Seed the database first.</p>
+                )}
               </div>
             </div>
           </div>

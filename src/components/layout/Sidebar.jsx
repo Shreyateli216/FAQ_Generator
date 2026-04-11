@@ -1,10 +1,25 @@
-import React from 'react';
-import { Plus, LayoutDashboard, Library, Activity, BarChart, Server, Key, Settings } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, LayoutDashboard, Library, Activity, BarChart, Server, Settings } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
-import { MOCK_PROJECTS } from '../../data/mockProjects';
+import projectsApi from '../../api/projectsApi';
 
 export default function Sidebar() {
   const location = useLocation();
+  const [recentProjects, setRecentProjects] = useState([]);
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const data = await projectsApi.getAll();
+        if (data.success) {
+          setRecentProjects(data.data.slice(0, 3));
+        }
+      } catch (err) {
+        console.error('Failed to load projects:', err);
+      }
+    };
+    fetchProjects();
+  }, []);
 
   const NAV_ITEMS = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
@@ -49,12 +64,16 @@ export default function Sidebar() {
       <div className="px-6 mb-4">
         <h3 className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-3">Recent Projects</h3>
         <div className="space-y-3">
-          {MOCK_PROJECTS.slice(0, 3).map(proj => (
-            <div key={proj.id} className="flex items-center gap-3 cursor-pointer group">
-              <div className={`w-2 h-2 rounded-full ${proj.thumbnail}`}></div>
-              <span className="text-sm text-white/70 group-hover:text-white transition-colors truncate">{proj.name}</span>
-            </div>
-          ))}
+          {recentProjects.length > 0 ? (
+            recentProjects.map(proj => (
+              <div key={proj._id} className="flex items-center gap-3 cursor-pointer group">
+                <div className={`w-2 h-2 rounded-full ${proj.thumbnail}`}></div>
+                <span className="text-sm text-white/70 group-hover:text-white transition-colors truncate">{proj.name}</span>
+              </div>
+            ))
+          ) : (
+            <p className="text-xs text-white/30">No projects yet</p>
+          )}
         </div>
       </div>
 
