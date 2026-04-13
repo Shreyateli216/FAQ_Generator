@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Copy, ThumbsUp, ThumbsDown, RefreshCw, ChevronDown } from 'lucide-react';
 
 export default function FaqAccordion({ faqs, activePersona }) {
-  const [openId, setOpenId] = useState(faqs?.[0]?.id || null);
+  const getId = (faq) => faq._id || faq.id;
+  const [openId, setOpenId] = useState(faqs?.[0] ? getId(faqs[0]) : null);
 
   if (!faqs || faqs.length === 0) return null;
 
@@ -11,14 +12,15 @@ export default function FaqAccordion({ faqs, activePersona }) {
   return (
     <div className="space-y-3">
       {faqs.map((faq) => {
-        const isOpen = openId === faq.id;
+        const faqId = getId(faq);
+        const isOpen = openId === faqId;
         return (
           <div 
-            key={faq.id} 
+            key={faqId} 
             className={`rounded-xl border transition-colors ${isOpen ? 'bg-[#1A1B23] border-white/20' : 'bg-black/20 border-white/5 hover:border-white/10'}`}
           >
             <button 
-              onClick={() => setOpenId(isOpen ? null : faq.id)}
+              onClick={() => setOpenId(isOpen ? null : faqId)}
               className="w-full px-5 py-4 flex items-center justify-between text-left"
             >
               <h3 className={`text-sm font-medium pr-4 ${isOpen ? 'text-white' : 'text-white/80'}`}>{faq.question}</h3>

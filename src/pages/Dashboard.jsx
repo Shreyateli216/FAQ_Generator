@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import FeatureInputCard from '../components/dashboard/FeatureInputCard';
 import ScreenshotUploader from '../components/dashboard/ScreenshotUploader';
 import GenerateButton from '../components/dashboard/GenerateButton';
@@ -6,6 +6,7 @@ import PersonaTabs from '../components/dashboard/PersonaTabs';
 import FaqAccordion from '../components/dashboard/FaqAccordion';
 import { MOCK_FAQS } from '../data/mockFaqs';
 import { generateFaqsFromContext, checkOllamaConnection } from '../utils/ollamaClient';
+import faqsApi from '../api/faqsApi';
 
 export default function Dashboard() {
   const [activePersona, setActivePersona] = useState('nora'); // nora, sam, paul
@@ -13,10 +14,36 @@ export default function Dashboard() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedFaqs, setGeneratedFaqs] = useState(null);
   const [ollamaError, setOllamaError] = useState('');
+  const [faqs, setFaqs] = useState({ nora: [], sam: [], paul: [] });
+  const [loading, setLoading] = useState(true);
 
   // UI State for Context Generation
   const [targetUrl, setTargetUrl] = useState('https://acme.inc/new-dashboard');
   const [featureDescription, setFeatureDescription] = useState("The new Shadow Integration widget automatically inherits the host website's CSS tokens (colors, typography, spacing) without requiring heavy configuration. It connects via a single `<script>` tag and relies on dynamic DOM inspection.");
+
+  // Fetch FAQs from API
+  useEffect(() => {
+    const fetchFaqs = async () => {
+      try {
+        setLoading(true);
+        const [noraData, samData, paulData] = await Promise.all([
+          faqsApi.getAll({ persona: 'nora' }),
+          faqsApi.getAll({ persona: 'sam' }),
+          faqsApi.getAll({ persona: 'paul' }),
+        ]);
+        setFaqs({
+          nora: noraData.success ? noraData.data : [],
+          sam: samData.success ? samData.data : [],
+          paul: paulData.success ? paulData.data : [],
+        });
+      } catch (err) {
+        console.error('Failed to load FAQs:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchFaqs();
+  }, []);
 
   const handleGenerate = async () => {
     if (!featureDescription.trim()) {
@@ -109,7 +136,7 @@ export default function Dashboard() {
     }
   };
 
-  const currentFaqs = generatedFaqs || MOCK_FAQS[activePersona];
+  const currentFaqs = generatedFaqs || faqs[activePersona] || MOCK_FAQS[activePersona];
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 max-w-[1600px] mx-auto h-full">
@@ -155,11 +182,11 @@ export default function Dashboard() {
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 pb-6">
-          {isGenerating ? (
+          {isGenerating || loading ? (
             <div className="flex flex-col items-center justify-center h-full text-white/40 space-y-4">
                <div className="w-8 h-8 border-2 border-[#00F0FF]/30 border-t-[#00F0FF] rounded-full animate-spin"></div>
-               <p className="text-sm">Prompting LLaMA-3 via Ollama...</p>
-               <p className="text-xs text-white/20">This may take a few seconds depending on your machine specs.</p>
+               <p className="text-sm">{isGenerating ? 'Prompting LLaMA-3 via Ollama...' : 'Loading FAQs from database...'}</p>
+               {isGenerating && <p className="text-xs text-white/20">This may take a few seconds depending on your machine specs.</p>}
             </div>
           ) : ollamaError ? (
             <div className="flex flex-col items-center justify-center h-full text-white/40 space-y-4 p-6 bg-red-500/5 rounded-xl border border-red-500/20">
@@ -174,7 +201,14 @@ export default function Dashboard() {
                     Successfully connected to local Ollama. These FAQs are dynamically AI-generated!
                  </div>
                )}
-               <FaqAccordion faqs={currentFaqs} activePersona={activePersona} />
+               {currentFaqs.length > 0 ? (
+                 <FaqAccordion faqs={currentFaqs} activePersona={activePersona} />
+               ) : (
+                 <div className="flex flex-col items-center justify-center h-full text-white/30 space-y-2 py-12">
+                   <p className="text-sm">No FAQs generated yet.</p>
+                   <p className="text-xs">Seed the database or generate new FAQs to see them here.</p>
+                 </div>
+               )}
             </div>
           )}
         </div>

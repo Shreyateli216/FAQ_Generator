@@ -1,6 +1,7 @@
-import React from 'react';
-import { Sparkles, Shield, User, ChevronRight } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Sparkles, Shield, User, ChevronRight, LogOut } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 const WORKFLOW_STEPS = [
   { label: "Ingest", path: "/ingest" },
@@ -12,6 +13,9 @@ const WORKFLOW_STEPS = [
 
 export default function TopNav() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const [showDropdown, setShowDropdown] = useState(false);
   
   let activeStep = -1;
   const currentPath = location.pathname;
@@ -20,6 +24,11 @@ export default function TopNav() {
   else if (currentPath === '/') activeStep = 2; // Dashboard/Generate
   else if (currentPath === '/preview') activeStep = 3;
   else if (currentPath === '/export') activeStep = 4;
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 h-16 bg-[#0F1117]/80 backdrop-blur-md border-b border-white/5 z-50 flex items-center justify-between px-6">
@@ -78,10 +87,35 @@ export default function TopNav() {
           </div>
         </div>
 
-        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#00F0FF] to-[#A855F7] p-[1px]">
-          <div className="w-full h-full bg-[#1A1B23] rounded-full flex items-center justify-center overflow-hidden">
-            <User className="w-4 h-4 text-white/80" />
-          </div>
+        {/* User avatar with dropdown */}
+        <div className="relative">
+          <button 
+            onClick={() => setShowDropdown(!showDropdown)}
+            className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#00F0FF] to-[#A855F7] p-[1px] cursor-pointer hover:shadow-[0_0_12px_rgba(0,240,255,0.3)] transition-shadow"
+          >
+            <div className="w-full h-full bg-[#1A1B23] rounded-full flex items-center justify-center overflow-hidden">
+              <User className="w-4 h-4 text-white/80" />
+            </div>
+          </button>
+
+          {showDropdown && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowDropdown(false)} />
+              <div className="absolute right-0 top-12 w-56 bg-[#1A1B23] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden">
+                <div className="px-4 py-3 border-b border-white/5">
+                  <p className="text-sm font-medium text-white truncate">{user?.name || 'User'}</p>
+                  <p className="text-xs text-white/40 truncate">{user?.email || ''}</p>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sign Out
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </nav>

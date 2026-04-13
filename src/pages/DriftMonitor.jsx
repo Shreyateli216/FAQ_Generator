@@ -1,12 +1,63 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Filler, Legend } from 'chart.js';
-import { MOCK_DRIFT_DATA } from '../data/mockDriftData';
 import { AlertCircle, TrendingUp, CheckCircle2 } from 'lucide-react';
+import driftApi from '../api/driftApi';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Filler, Legend);
 
+const DEFAULT_CHART = {
+  labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+  datasets: [{
+    label: 'Semantic Drift Index',
+    data: [0, 0, 0, 0, 0, 0, 0],
+    borderColor: '#A855F7',
+    backgroundColor: 'rgba(168, 85, 247, 0.2)',
+  }]
+};
+
 export default function DriftMonitor() {
+  const [driftData, setDriftData] = useState({
+    driftScore: 0,
+    status: 'Healthy',
+    recentEvents: [],
+    trendChart: DEFAULT_CHART
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDrift = async () => {
+      try {
+        const data = await driftApi.getData();
+        if (data.success) {
+          setDriftData({
+            driftScore: data.data.driftScore || 0,
+            status: data.data.status || 'Healthy',
+            recentEvents: data.data.recentEvents || [],
+            trendChart: data.data.trendChart || DEFAULT_CHART
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load drift data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDrift();
+  }, []);
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffHours = Math.floor(diffMs / 3600000);
+    if (diffHours < 1) return 'Just now';
+    if (diffHours < 24) return `Today, ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    if (diffHours < 48) return `Yesterday, ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    return `${Math.floor(diffHours / 24)} days ago`;
+  };
+
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -32,6 +83,14 @@ export default function DriftMonitor() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="w-8 h-8 border-2 border-[#A855F7]/30 border-t-[#A855F7] rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-[1200px] mx-auto h-full flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -52,7 +111,7 @@ export default function DriftMonitor() {
         <div className="col-span-2 glass-card p-6 h-[400px] flex flex-col">
           <h2 className="text-sm font-semibold text-white/70 uppercase tracking-wider mb-4">Semantic Drift Index (7 Days)</h2>
           <div className="flex-1 min-h-0">
-            <Line options={chartOptions} data={MOCK_DRIFT_DATA.trendChart} />
+            <Line options={chartOptions} data={driftData.trendChart} />
           </div>
         </div>
 
@@ -60,10 +119,10 @@ export default function DriftMonitor() {
           <div>
             <h2 className="text-sm font-semibold text-white/70 uppercase tracking-wider mb-2">Current Score</h2>
             <div className="flex items-end gap-2">
-              <span className="text-5xl font-bold text-[#A855F7]">12</span>
+              <span className="text-5xl font-bold text-[#A855F7]">{driftData.driftScore}</span>
               <span className="text-sm text-[#22C55E] mb-1 flex items-center gap-1"><TrendingUp className="w-4 h-4" /> -4%</span>
             </div>
-            <p className="text-xs text-white/40 mt-1">Lower score indicates better alignment. Currently Healthy.</p>
+            <p className="text-xs text-white/40 mt-1">Lower score indicates better alignment. Currently {driftData.status}.</p>
           </div>
           
           <div className="flex-1 w-full bg-gradient-to-b from-[#1A1B23] to-transparent rounded-lg border border-white/5 p-4 flex flex-col items-center justify-center text-center">
@@ -78,27 +137,31 @@ export default function DriftMonitor() {
       <div className="glass-card p-6 flex-1">
          <h2 className="text-sm font-semibold text-white/70 uppercase tracking-wider mb-4">Recent Drift Events</h2>
          <div className="space-y-3">
-           {MOCK_DRIFT_DATA.recentEvents.map(ev => (
-             <div key={ev.id} className="flex gap-4 p-4 rounded-lg bg-black/20 border border-white/5 hover:border-white/10 transition-colors">
-               <div className="pt-1">
-                 {ev.actionNeeded ? (
-                   <AlertCircle className="w-5 h-5 text-[#F59E0B]" />
-                 ) : (
-                   <CheckCircle2 className="w-5 h-5 text-[#22C55E]" />
-                 )}
-               </div>
-               <div className="flex-1">
-                 <div className="flex items-center justify-between mb-1">
-                   <h3 className="font-medium text-sm text-white">{ev.title}</h3>
-                   <span className="text-xs text-white/40">{ev.date}</span>
+           {driftData.recentEvents.length === 0 ? (
+             <p className="text-sm text-white/30 text-center py-8">No drift events recorded yet.</p>
+           ) : (
+             driftData.recentEvents.map(ev => (
+               <div key={ev.id} className="flex gap-4 p-4 rounded-lg bg-black/20 border border-white/5 hover:border-white/10 transition-colors">
+                 <div className="pt-1">
+                   {ev.actionNeeded ? (
+                     <AlertCircle className="w-5 h-5 text-[#F59E0B]" />
+                   ) : (
+                     <CheckCircle2 className="w-5 h-5 text-[#22C55E]" />
+                   )}
                  </div>
-                 <p className="text-sm text-white/60 mb-3">{ev.description}</p>
-                 {ev.actionNeeded && (
-                   <button className="text-xs font-medium text-[#F59E0B] bg-[#F59E0B]/10 hover:bg-[#F59E0B]/20 px-3 py-1.5 rounded transition-colors">Review Suggestions</button>
-                 )}
+                 <div className="flex-1">
+                   <div className="flex items-center justify-between mb-1">
+                     <h3 className="font-medium text-sm text-white">{ev.title}</h3>
+                     <span className="text-xs text-white/40">{formatDate(ev.date)}</span>
+                   </div>
+                   <p className="text-sm text-white/60 mb-3">{ev.description}</p>
+                   {ev.actionNeeded && (
+                     <button className="text-xs font-medium text-[#F59E0B] bg-[#F59E0B]/10 hover:bg-[#F59E0B]/20 px-3 py-1.5 rounded transition-colors">Review Suggestions</button>
+                   )}
+                 </div>
                </div>
-             </div>
-           ))}
+             ))
+           )}
          </div>
       </div>
     </div>
