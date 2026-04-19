@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Key, Server, Lock, AlertTriangle, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
-import settingsApi from '../api/settingsApi';
 
 export default function Settings() {
   const [showGroqKey, setShowGroqKey] = useState(false);
@@ -10,42 +9,25 @@ export default function Settings() {
     textEngine: 'mistral:latest',
     visionEngine: 'llava:7b'
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const data = await settingsApi.get();
-        if (data.success && data.data) {
-          setSettings({
-            groqApiKey: data.data.groqApiKey || '',
-            privacyMode: data.data.privacyMode || false,
-            textEngine: data.data.textEngine || 'mistral:latest',
-            visionEngine: data.data.visionEngine || 'llava:7b'
-          });
-        }
-      } catch (err) {
-        console.error('Failed to load settings:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchSettings();
+    const local = localStorage.getItem('faqgenie_settings');
+    if (local) {
+      try { setSettings(JSON.parse(local)); } catch (e) {}
+    }
   }, []);
 
   const handleSave = async () => {
     setSaving(true);
-    try {
-      await settingsApi.update(settings);
+    localStorage.setItem('faqgenie_settings', JSON.stringify(settings));
+    setTimeout(() => {
       setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } catch (err) {
-      console.error('Failed to save settings:', err);
-    } finally {
       setSaving(false);
-    }
+      setTimeout(() => setSaved(false), 2000);
+    }, 500);
   };
 
   if (loading) {

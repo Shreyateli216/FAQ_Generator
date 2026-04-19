@@ -1,58 +1,31 @@
 const mongoose = require('mongoose');
 
-const projectSchema = new mongoose.Schema({
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
+const ProjectSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: [true, 'Please provide a project name'],
-    trim: true,
-    maxlength: [100, 'Name cannot exceed 100 characters']
+    required: [true, 'Please add a project name']
+  },
+  description: {
+    type: String
   },
   status: {
     type: String,
-    enum: ['Active', 'Draft', 'Archived'],
-    default: 'Draft'
+    enum: ['active', 'archived', 'draft'],
+    default: 'active'
   },
-  thumbnail: {
-    type: String,
-    default: 'bg-cyan-500'
-  },
-  faqsCount: {
+  faqCount: {
     type: Number,
     default: 0
   },
-  seoScore: {
-    type: Number,
-    default: 0
+  user: {
+    type: mongoose.Schema.ObjectId,
+    ref: 'User',
+    required: true
   },
-  sourceUrl: {
-    type: String,
-    default: ''
-  },
-  featureDescription: {
-    type: String,
-    default: ''
-  },
-  settings: {
-    chunkingStrategy: {
-      type: String,
-      default: 'Semantic (Recommended)'
-    },
-    languageDetection: {
-      type: String,
-      default: 'Auto-detect'
-    },
-    stripBoilerplate: {
-      type: Boolean,
-      default: true
-    }
+  createdAt: {
+    type: Date,
+    default: Date.now
   }
-}, {
-  timestamps: true
 });
 
-module.exports = mongoose.model('Project', projectSchema);
+module.exports = mongoose.model('Project', ProjectSchema);

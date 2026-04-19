@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Filler, Legend } from 'chart.js';
 import { AlertCircle, TrendingUp, CheckCircle2 } from 'lucide-react';
-import driftApi from '../api/driftApi';
+import { MOCK_DRIFT_DATA } from '../data/mockDriftData';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Filler, Legend);
 
@@ -17,34 +17,8 @@ const DEFAULT_CHART = {
 };
 
 export default function DriftMonitor() {
-  const [driftData, setDriftData] = useState({
-    driftScore: 0,
-    status: 'Healthy',
-    recentEvents: [],
-    trendChart: DEFAULT_CHART
-  });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchDrift = async () => {
-      try {
-        const data = await driftApi.getData();
-        if (data.success) {
-          setDriftData({
-            driftScore: data.data.driftScore || 0,
-            status: data.data.status || 'Healthy',
-            recentEvents: data.data.recentEvents || [],
-            trendChart: data.data.trendChart || DEFAULT_CHART
-          });
-        }
-      } catch (err) {
-        console.error('Failed to load drift data:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchDrift();
-  }, []);
+  const [driftData, setDriftData] = useState(MOCK_DRIFT_DATA);
+  const [loading, setLoading] = useState(false);
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '';

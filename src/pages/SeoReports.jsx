@@ -1,34 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Settings2, ShieldCheck, Download, CodeXml } from 'lucide-react';
-import seoApi from '../api/seoApi';
+import { MOCK_SEO_DATA } from '../data/mockSeoData';
 
 export default function SeoReports() {
-  const [seoData, setSeoData] = useState({
-    score: 0,
-    metrics: { keywordDensity: 0, readability: 0, schemaCompleteness: 0, userIntent: 0 },
-    suggestions: []
-  });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchSeo = async () => {
-      try {
-        const data = await seoApi.getData();
-        if (data.success && data.data) {
-          setSeoData({
-            score: data.data.score || 0,
-            metrics: data.data.metrics || { keywordDensity: 0, readability: 0, schemaCompleteness: 0, userIntent: 0 },
-            suggestions: data.data.suggestions || []
-          });
-        }
-      } catch (err) {
-        console.error('Failed to load SEO data:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchSeo();
-  }, []);
+  const [seoData, setSeoData] = useState(MOCK_SEO_DATA);
+  const [loading, setLoading] = useState(false);
 
   if (loading) {
     return (

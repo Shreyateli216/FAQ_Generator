@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
-const Setting = require('../models/Setting');
 
 // @route   POST /api/auth/register
 // @desc    Register a new user
@@ -21,9 +20,6 @@ router.post('/register', async (req, res, next) => {
 
     // Create user
     const user = await User.create({ name, email, password });
-
-    // Create default settings for user
-    await Setting.create({ user: user._id });
 
     // Generate token
     const token = user.getSignedJwtToken();

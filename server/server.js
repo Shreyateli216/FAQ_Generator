@@ -9,12 +9,7 @@ const errorHandler = require('./middleware/errorHandler');
 
 // Route files
 const authRoutes = require('./routes/auth');
-const projectRoutes = require('./routes/projects');
 const faqRoutes = require('./routes/faqs');
-const sourceRoutes = require('./routes/sources');
-const driftRoutes = require('./routes/drift');
-const seoRoutes = require('./routes/seo');
-const settingsRoutes = require('./routes/settings');
 const seedRoutes = require('./routes/seed');
 
 // Connect to MongoDB
@@ -40,12 +35,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Mount routes
 app.use('/api/auth', authRoutes);
-app.use('/api/projects', projectRoutes);
 app.use('/api/faqs', faqRoutes);
-app.use('/api/sources', sourceRoutes);
-app.use('/api/drift', driftRoutes);
-app.use('/api/seo', seoRoutes);
-app.use('/api/settings', settingsRoutes);
 app.use('/api/seed', seedRoutes);
 
 // Health check

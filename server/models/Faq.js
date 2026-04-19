@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
 
 const faqSchema = new mongoose.Schema({
-  project: {
+  user: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Project',
+    ref: 'User',
     required: true
   },
   question: {
@@ -16,6 +16,13 @@ const faqSchema = new mongoose.Schema({
     required: [true, 'Please provide an answer'],
     trim: true
   },
+  seoScore: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: 0
+  },
+  seoSuggestions: [String],
   persona: {
     type: String,
     enum: ['nora', 'sam', 'paul'],
@@ -30,15 +37,6 @@ const faqSchema = new mongoose.Schema({
     type: String,
     default: 'General'
   },
-  confidence: {
-    type: Number,
-    min: 0,
-    max: 100,
-    default: 90
-  },
-  entities: [{
-    type: String
-  }],
   order: {
     type: Number,
     default: 0
@@ -47,7 +45,7 @@ const faqSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for efficient querying
-faqSchema.index({ project: 1, persona: 1, language: 1 });
+// Index for efficient querying by user
+faqSchema.index({ user: 1, language: 1 });
 
 module.exports = mongoose.model('Faq', faqSchema);

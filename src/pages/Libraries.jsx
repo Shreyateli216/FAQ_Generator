@@ -1,38 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Folder, Search, MoreVertical, Globe, Trash2 } from 'lucide-react';
-import projectsApi from '../api/projectsApi';
+import { MOCK_PROJECTS } from '../data/mockProjects';
 
 export default function Libraries() {
-  const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [projects, setProjects] = useState(MOCK_PROJECTS);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    fetchProjects();
-  }, []);
-
-  const fetchProjects = async () => {
-    try {
-      setLoading(true);
-      const data = await projectsApi.getAll();
-      if (data.success) {
-        setProjects(data.data);
-      }
-    } catch (err) {
-      console.error('Failed to load projects:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this project?')) return;
-    try {
-      await projectsApi.delete(id);
-      setProjects(prev => prev.filter(p => p._id !== id));
-    } catch (err) {
-      console.error('Failed to delete project:', err);
-    }
+    if (!window.confirm('Are you sure you want to delete this project?')) return;
+    setProjects(prev => prev.filter(p => p.id !== id));
   };
 
   const filteredProjects = projects.filter(p =>
@@ -86,7 +63,7 @@ export default function Libraries() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProjects.map(proj => (
-            <div key={proj._id} className="glass-card p-5 group flex flex-col">
+            <div key={proj.id} className="glass-card p-5 group flex flex-col">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-lg ${proj.thumbnail} flex items-center justify-center shadow-lg`}>
@@ -100,7 +77,7 @@ export default function Libraries() {
                     </div>
                   </div>
                 </div>
-                <button onClick={() => handleDelete(proj._id)} className="text-white/20 hover:text-red-400 p-1 transition-colors opacity-0 group-hover:opacity-100">
+                <button onClick={() => handleDelete(proj.id)} className="text-white/20 hover:text-red-400 p-1 transition-colors opacity-0 group-hover:opacity-100">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
@@ -118,7 +95,7 @@ export default function Libraries() {
               </div>
 
               <div className="mt-4 flex items-center justify-between text-xs text-white/40">
-                <span>Updated {getTimeAgo(proj.updatedAt)}</span>
+                <span>Updated {proj.date}</span>
                 <div className="flex items-center gap-1 hover:text-[#A855F7] cursor-pointer transition-colors">
                   <Globe className="w-3 h-3" />
                   <span>Live Widget</span>

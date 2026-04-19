@@ -11,12 +11,10 @@ router.use(protect);
 router.get('/', async (req, res, next) => {
   try {
     let settings = await Setting.findOne({ user: req.user._id });
-
-    // If no settings exist, create default
     if (!settings) {
+      // Create default settings if not exist
       settings = await Setting.create({ user: req.user._id });
     }
-
     res.json({ success: true, data: settings });
   } catch (err) {
     next(err);
@@ -29,7 +27,7 @@ router.get('/', async (req, res, next) => {
 router.put('/', async (req, res, next) => {
   try {
     let settings = await Setting.findOne({ user: req.user._id });
-
+    
     if (!settings) {
       req.body.user = req.user._id;
       settings = await Setting.create(req.body);

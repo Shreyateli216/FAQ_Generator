@@ -1,30 +1,33 @@
 const mongoose = require('mongoose');
 
-const settingSchema = new mongoose.Schema({
+const SettingSchema = new mongoose.Schema({
+  language: {
+    type: String,
+    default: 'en'
+  },
+  theme: {
+    type: String,
+    enum: ['light', 'dark', 'system'],
+    default: 'dark'
+  },
+  autoSync: {
+    type: Boolean,
+    default: true
+  },
+  notifications: {
+    type: Boolean,
+    default: true
+  },
   user: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: mongoose.Schema.ObjectId,
     ref: 'User',
     required: true,
     unique: true
   },
-  groqApiKey: {
-    type: String,
-    default: ''
-  },
-  privacyMode: {
-    type: Boolean,
-    default: false
-  },
-  textEngine: {
-    type: String,
-    default: 'mistral:latest'
-  },
-  visionEngine: {
-    type: String,
-    default: 'llava:7b'
+  createdAt: {
+    type: Date,
+    default: Date.now
   }
-}, {
-  timestamps: true
 });
 
-module.exports = mongoose.model('Setting', settingSchema);
+module.exports = mongoose.model('Setting', SettingSchema);

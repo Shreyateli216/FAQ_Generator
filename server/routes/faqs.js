@@ -1,31 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const Faq = require('../models/Faq');
-const Project = require('../models/Project');
 const protect = require('../middleware/auth');
 
 router.use(protect);
 
 // @route   GET /api/faqs
-// @desc    Get FAQs with optional filters: projectId, persona, language
+// @desc    Get all FAQs for current user
 // @access  Private
 router.get('/', async (req, res, next) => {
   try {
-    const { projectId, persona, language } = req.query;
-    const filter = {};
-
-    if (projectId) {
-      // Verify project belongs to user
-      const project = await Project.findOne({ _id: projectId, user: req.user._id });
-      if (!project) {
-        return res.status(404).json({ success: false, error: 'Project not found' });
-      }
-      filter.project = projectId;
-    } else {
-      // If no projectId, get FAQs for all user's projects
-      const userProjects = await Project.find({ user: req.user._id }).select('_id');
-      filter.project = { $in: userProjects.map(p => p._id) };
-    }
+    const { persona, language } = req.query;
+    const filter = { user: req.user._id };
 
     if (persona) filter.persona = persona;
     if (language) filter.language = language;
@@ -42,7 +28,7 @@ router.get('/', async (req, res, next) => {
 // @access  Private
 router.get('/:id', async (req, res, next) => {
   try {
-    const faq = await Faq.findById(req.params.id).populate('project');
+    const faq = await Faq.findOne({ _id: req.params.id, user: req.user._id });
     if (!faq) {
       return res.status(404).json({ success: false, error: 'FAQ not found' });
     }
@@ -57,18 +43,8 @@ router.get('/:id', async (req, res, next) => {
 // @access  Private
 router.post('/', async (req, res, next) => {
   try {
-    // Verify project belongs to user
-    const project = await Project.findOne({ _id: req.body.project, user: req.user._id });
-    if (!project) {
-      return res.status(404).json({ success: false, error: 'Project not found' });
-    }
-
+    req.body.user = req.user._id;
     const faq = await Faq.create(req.body);
-
-    // Update project FAQ count
-    const faqCount = await Faq.countDocuments({ project: project._id });
-    await Project.findByIdAndUpdate(project._id, { faqsCount: faqCount });
-
     res.status(201).json({ success: true, data: faq });
   } catch (err) {
     next(err);
@@ -80,27 +56,15 @@ router.post('/', async (req, res, next) => {
 // @access  Private
 router.post('/bulk', async (req, res, next) => {
   try {
-    const { projectId, faqs } = req.body;
+    const { faqs } = req.body;
 
-    // Verify project
-    const project = await Project.findOne({ _id: projectId, user: req.user._id });
-    if (!project) {
-      return res.status(404).json({ success: false, error: 'Project not found' });
-    }
-
-    // Add project reference to each FAQ
-    const faqsWithProject = faqs.map((faq, index) => ({
+    const faqsWithUser = faqs.map((faq, index) => ({
       ...faq,
-      project: projectId,
+      user: req.user._id,
       order: index
     }));
 
-    const createdFaqs = await Faq.insertMany(faqsWithProject);
-
-    // Update project FAQ count
-    const faqCount = await Faq.countDocuments({ project: projectId });
-    await Project.findByIdAndUpdate(projectId, { faqsCount: faqCount });
-
+    const createdFaqs = await Faq.insertMany(faqsWithUser);
     res.status(201).json({ success: true, count: createdFaqs.length, data: createdFaqs });
   } catch (err) {
     next(err);
@@ -112,7 +76,7 @@ router.post('/bulk', async (req, res, next) => {
 // @access  Private
 router.put('/:id', async (req, res, next) => {
   try {
-    let faq = await Faq.findById(req.params.id);
+    let faq = await Faq.findOne({ _id: req.params.id, user: req.user._id });
     if (!faq) {
       return res.status(404).json({ success: false, error: 'FAQ not found' });
     }
@@ -133,18 +97,12 @@ router.put('/:id', async (req, res, next) => {
 // @access  Private
 router.delete('/:id', async (req, res, next) => {
   try {
-    const faq = await Faq.findById(req.params.id);
+    const faq = await Faq.findOne({ _id: req.params.id, user: req.user._id });
     if (!faq) {
       return res.status(404).json({ success: false, error: 'FAQ not found' });
     }
 
-    const projectId = faq.project;
     await faq.deleteOne();
-
-    // Update project FAQ count
-    const faqCount = await Faq.countDocuments({ project: projectId });
-    await Project.findByIdAndUpdate(projectId, { faqsCount: faqCount });
-
     res.json({ success: true, data: {} });
   } catch (err) {
     next(err);
